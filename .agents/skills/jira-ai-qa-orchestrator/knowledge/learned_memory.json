@@ -1,0 +1,383 @@
+{
+  "version": "2.0.0",
+  "last_updated": "2026-09-15T23:55:00+05:30",
+  "learning_mode": "ACTIVE",
+  "default_package": "com.girnarsoft.cardekho",
+  "supported_packages": {
+    "cardekho": "com.girnarsoft.cardekho",
+    "cardekho_qa": "com.girnarsoft.cardekho.qa",
+    "cardekho_debug": "com.cardekho.android.debug",
+    "bikedekho": "com.bikedekho.android"
+  },
+  "environments": {
+    "cardekho": {
+      "testingpwa1": {
+        "base_url": "https://testingpwa1.cardekho.com",
+        "base_api_url": "https://testingpwa1.cardekho.com/api",
+        "my_account_url": "https://apis.cardekho.com/f8",
+        "ask_ai_url": "https://ai.cardekho.com"
+      },
+      "testingpwa2": {
+        "base_url": "https://testingpwa2.cardekho.com",
+        "base_api_url": "https://testingpwa2.cardekho.com/api",
+        "my_account_url": "https://qa-apis.cardekho.com/f8",
+        "ask_ai_url": "https://ai.cardekho.com"
+      },
+      "staging": {
+        "base_url": "https://staging.cardekho.com",
+        "base_api_url": "https://staging.cardekho.com/api",
+        "my_account_url": "https://uat-apis.cardekho.com/f8",
+        "ask_ai_url": "https://ai.cardekho.com"
+      },
+      "live": {
+        "base_url": "https://www.cardekho.com",
+        "base_api_url": "https://www.cardekho.com/api"
+      }
+    },
+    "bikedekho": {
+      "active_testing_server": "testingapi2",
+      "testing": {
+        "api_servers": [
+          "testingapi2",
+          "testingapi1"
+        ],
+        "pwa_servers": [
+          "testingapi2",
+          "testing2",
+          "testing1"
+        ],
+        "api_pattern": "https://{server}.bikedekho.com",
+        "pwa_pattern": "https://{server}.bikedekho.com"
+      },
+      "staging": {
+        "base_url": "https://alpha.bikedekho.com",
+        "base_api_url": "https://alphaapi.bikedekho.com"
+      },
+      "live": {
+        "base_url": "https://www.bikedekho.com"
+      }
+    },
+    "testingpwa1": {
+      "base_url": "https://testingpwa1.cardekho.com",
+      "base_api_url": "https://testingpwa1.cardekho.com/api",
+      "my_account_url": "https://apis.cardekho.com/f8",
+      "ask_ai_url": "https://ai.cardekho.com"
+    },
+    "testingpwa2": {
+      "base_url": "https://testingpwa2.cardekho.com",
+      "base_api_url": "https://testingpwa2.cardekho.com/api",
+      "my_account_url": "https://qa-apis.cardekho.com/f8",
+      "ask_ai_url": "https://ai.cardekho.com"
+    },
+    "staging": {
+      "base_url": "https://staging.cardekho.com",
+      "base_api_url": "https://staging.cardekho.com/api",
+      "my_account_url": "https://uat-apis.cardekho.com/f8",
+      "ask_ai_url": "https://ai.cardekho.com"
+    }
+  },
+  "device_profiles": {
+    "OnePlus_CPH2585": {
+      "brand": "OnePlus",
+      "model": "CPH2585",
+      "os_version": "14",
+      "screen_resolution": "1080x2376",
+      "wake_strategy": "keyevent_224_and_82",
+      "keyboard_dismiss_keyevent": 111,
+      "back_keyevent": 4,
+      "enter_keyevent": 66,
+      "coordinates": {
+        "home": {
+          "hamburger_icon": [
+            75,
+            175
+          ],
+          "location_selector": [
+            250,
+            175
+          ],
+          "favorites_icon": [
+            810,
+            175
+          ],
+          "profile_avatar": [
+            920,
+            175
+          ],
+          "search_cars_box": [
+            400,
+            340
+          ],
+          "bottom_nav_find_cars": [
+            135,
+            2300
+          ],
+          "bottom_nav_new": [
+            375,
+            2300
+          ],
+          "bottom_nav_used": [
+            620,
+            2300
+          ],
+          "bottom_nav_news": [
+            875,
+            2300
+          ]
+        },
+        "drawer": {
+          "new_cars": [
+            300,
+            480
+          ],
+          "used_cars": [
+            300,
+            610
+          ],
+          "sell_car": [
+            300,
+            750
+          ],
+          "compare_cars": [
+            300,
+            920
+          ],
+          "change_url": [
+            140,
+            1950
+          ],
+          "share": [
+            415,
+            1950
+          ],
+          "feedback": [
+            690,
+            1950
+          ],
+          "dismiss_outside_tap": [
+            950,
+            1000
+          ]
+        },
+        "change_url_screen": {
+          "base_url_field": [
+            850,
+            450
+          ],
+          "base_api_url_field": [
+            850,
+            750
+          ],
+          "my_account_url_field": [
+            850,
+            1050
+          ],
+          "ask_ai_url_field": [
+            850,
+            1350
+          ],
+          "reset_button": [
+            100,
+            1650
+          ],
+          "update_button": [
+            880,
+            1650
+          ],
+          "back_arrow": [
+            80,
+            85
+          ],
+          "toast_expected_text": "Updated Successfully"
+        },
+        "search_screen": {
+          "input_field": [
+            300,
+            80
+          ],
+          "first_suggestion_row": [
+            540,
+            321
+          ],
+          "second_suggestion_row": [
+            540,
+            435
+          ],
+          "recent_first_item": [
+            350,
+            380
+          ],
+          "keyboard_search_button": [
+            920,
+            2030
+          ]
+        },
+        "model_overview": {
+          "header_back": [
+            80,
+            85
+          ],
+          "header_search": [
+            700,
+            85
+          ],
+          "header_heart": [
+            820,
+            85
+          ],
+          "header_share": [
+            935,
+            85
+          ],
+          "tab_bar_y": 360,
+          "tab_overview": [
+            180,
+            360
+          ],
+          "tab_price": [
+            461,
+            360
+          ],
+          "tab_compare": [
+            730,
+            360
+          ],
+          "tab_variants": [
+            984,
+            360
+          ],
+          "tab_specs_features": [
+            432,
+            360
+          ],
+          "tab_faq": [
+            975,
+            360
+          ],
+          "cta_view_offers": [
+            430,
+            2270
+          ],
+          "cta_whatsapp": [
+            880,
+            2270
+          ],
+          "safe_scroll_margin_x": 100,
+          "more_options_to_consider": [
+            430,
+            1340
+          ]
+        },
+        "dialogs": {
+          "login_modal_skip_button": [
+            880,
+            615
+          ],
+          "dismiss_system_dialog": [
+            540,
+            2100
+          ]
+        }
+      }
+    }
+  },
+  "learned_workflows": {
+    "change_url": {
+      "description": "Deterministic sequence to update target server in CarDekho App without trial-and-error",
+      "steps": [
+        "Open drawer at (75, 175)",
+        "Tap Change URL at (140, 1950)",
+        "Tap Base URL at (850, 450), select all & delete, type new base_url",
+        "Tap Base API URL at (850, 750), select all & delete, type new base_api_url",
+        "Dismiss keyboard with keyevent 111",
+        "Tap UPDATE button at (880, 1650)",
+        "Assert Updated Successfully toast",
+        "Tap back arrow at (80, 85) to return to Home"
+      ]
+    },
+    "popup_free_execution": {
+      "description": "Zero IDE Security Dialog execution protocol",
+      "rule": "Execute atomic tasks via fast_runner.py instead of inline shell command chaining"
+    },
+    "parallel_live_device_execution": {
+      "description": "All test actions, gestures, clicks, and validations execute in real-time directly on the connected physical device via ADB",
+      "rule": "Execute live ADB commands parallelly on the connected hardware and mirror live screencap state back to the chat immediately without detached simulation"
+    },
+    "girnar_jira_workflow": {
+      "name": "Girnar-2024-v1 - Workflow - Story",
+      "stages": [
+        "CREATE TICKET",
+        "DESIGN REQUIRED",
+        "IN DESIGN",
+        "DESIGN IN REVIEW",
+        "PRIORITIZE",
+        "DEV IN PROGRESS",
+        "CODE REVIEW",
+        "DEV COMPLETE",
+        "PENDING DEPLOYMENT",
+        "SANITY TESTING",
+        "IN QA",
+        "IN UAT",
+        "DEV DONE",
+        "CLOSED",
+        "ON-HOLD",
+        "CANCELLED",
+        "DUPLICATE"
+      ],
+      "qa_transitions": {
+        "from_in_qa": {
+          "qa_pass_signoff": {
+            "transition_name": "QA Complete",
+            "transition_id": 111,
+            "target_status": "IN UAT",
+            "action": "Triggered automatically when QA Sign-Off comment is posted"
+          },
+          "qa_fail_defect": {
+            "transition_name": "Dev In Progress",
+            "target_status": "DEV IN PROGRESS",
+            "action": "Triggered when blocking bugs are found and QA is rejected"
+          },
+          "hold": {
+            "transition_name": "On-Hold",
+            "transition_id": 501,
+            "target_status": "ON-HOLD"
+          },
+          "close": {
+            "transition_name": "Closed",
+            "transition_id": 271,
+            "target_status": "CLOSED"
+          }
+        },
+        "from_in_uat": {
+          "uat_complete": {
+            "transition_name": "Dev Done",
+            "transition_id": 421,
+            "target_status": "DEV DONE"
+          },
+          "close": {
+            "transition_name": "Closed",
+            "transition_id": 271,
+            "target_status": "CLOSED"
+          }
+        }
+      }
+    },
+    "safe_vertical_scroll": {
+      "description": "Always scroll vertically along the screen's left neutral margin (x=100) to prevent getting trapped inside horizontal scrollviews/carousels (like video shorts or model chips).",
+      "safe_margin_x": 100
+    },
+    "multi_stage_jira_transition": {
+      "description": "If ticket is in Dev Complete, auto-transition to In QA (ID: 91) first, and then execute QA Complete (ID: 111) to reach In UAT seamlessly.",
+      "chain": [
+        "Dev Complete -> In QA",
+        "In QA -> In UAT (QA Complete)"
+      ]
+    }
+  },
+  "learned_rules": {
+    "mandatory_physical_device_execution": "Strictly forbidden to verify UI/WAP/App solely via curl/python HTTP requests. Must traverse on physical OnePlus 12R hardware with real screencaps.",
+    "zero_server_assumption": "Never assume or pick a server from past conversation. Must verify via Jira comments/Jenkins or confirm from user explicitly.",
+    "pre_check_summary_mandate": "Always emit [PRE-CHECK SUMMARY] before executing tests.",
+    "dev_scope_validation": "Do not blindly accept dev comments that exclude platforms (e.g. App) if Jira ticket mandates universal changes."
+  }
+}

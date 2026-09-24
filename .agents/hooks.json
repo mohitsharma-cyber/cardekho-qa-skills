@@ -1,0 +1,16 @@
+{
+  "qa-permission-guard": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command|write_to_file|replace_file_content|view_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "run_hook.cmd",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

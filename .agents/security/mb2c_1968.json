@@ -1,0 +1,25 @@
+{
+  "id": "412003",
+  "key": "MB2C-1968",
+  "summary": "[CD APP] : More Options to Consider widget cards do not have rounded corners",
+  "description": "Description:\r\nOn the Model Price/Overview page, the \u201cMore options to consider\u201d widget is not rendering with properly rounded corners on the card edges.\r\n\r\nAs visible in the attached screenshot, the widget/card corners appear sharp/square, whereas the expected UI design requires rounded corners consistent with the other cards/widgets on the page.\r\n\r\nSteps to Reproduce:\r\n\r\nOpen the CarDekho app/PWA.\r\nNavigate to any Model page.\r\nScroll to the \u201cMore options to consider\u201d widget.\r\nObserve the edges/corners of the cards.\r\n\r\nActual Result:\r\nThe card/widget edges appear sharp and are not properly rounded.\r\n\r\nExpected Result:\r\nThe \u201cMore options to consider\u201d cards should have properly rounded corners as per the UI design. !image-2026-08-31-11-55-30-744.png|thumbnail! ",
+  "acceptance_criteria": "hed screenshot, the widget/card corners appear sharp/square, whereas the expected UI design requires rounded corners consistent with the other cards/widgets on the page.",
+  "issue_type": "Prod Bug",
+  "priority": "Medium",
+  "status": "Dev Complete",
+  "labels": [
+    "App,Cardekho"
+  ],
+  "assignee": "mohit.sharma",
+  "reporter": "mohit.sharma",
+  "project_key": "MB2C",
+  "linked_issues": [],
+  "comments": [
+    {
+      "author": "Dimple.Chauhan",
+      "body": "Done. Branch => *cd_MB2C-1968*",
+      "created": "2026-08-31T06:37:25.578+0000"
+    }
+  ],
+  "attachment_count": 1
+}
