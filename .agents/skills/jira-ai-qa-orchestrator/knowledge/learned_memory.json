@@ -378,6 +378,78 @@
     "mandatory_physical_device_execution": "Strictly forbidden to verify UI/WAP/App solely via curl/python HTTP requests. Must traverse on physical OnePlus 12R hardware with real screencaps.",
     "zero_server_assumption": "Never assume or pick a server from past conversation. Must verify via Jira comments/Jenkins or confirm from user explicitly.",
     "pre_check_summary_mandate": "Always emit [PRE-CHECK SUMMARY] before executing tests.",
-    "dev_scope_validation": "Do not blindly accept dev comments that exclude platforms (e.g. App) if Jira ticket mandates universal changes."
+    "dev_scope_validation": "Do not blindly accept dev comments that exclude platforms (e.g. App) if Jira ticket mandates universal changes.",
+    "anti_false_positive_build_gate": "Never mark test as PASS on legacy UI when new components are absent. Always inspect dumpsys package and component fingerprints.",
+    "v2_api_parameter_contract": "Never use outdated V1 queries from Jira descriptions. Use /v2/ with slug, cityId!=0, and otherinfo=all,app.",
+    "cross_domain_and_error_sniffing": "Sniff for copy leaks (riding on CD / driving on BD), toast errors, and price truncation during all UI traversals."
+  },
+  "api_contracts": {
+    "brand_models_v2": {
+      "endpoint": "/api/v2/brand/models",
+      "required_params": {
+        "slug": "brand name (e.g. tata, mahindra, maruti-suzuki)",
+        "cityId": "numeric city ID != 0 (e.g. 338 for Gurgaon, 269 for Delhi)",
+        "otherinfo": "all,app"
+      },
+      "validation_rules": [
+        "popularUsedCars is populated only when cityId != 0 and slug is present",
+        "EV models have uppercase 'EV' text and iconUrl set",
+        "Non-EV tags are formatted in uppercase without iconUrl"
+      ]
+    },
+    "brand_models_filter_v2": {
+      "endpoint": "/api/v2/brand/modelsFilter",
+      "required_params": {
+        "slug": "brand name (e.g. tata)",
+        "fuelTypes": "e.g. Electric",
+        "cityId": "numeric city ID != 0",
+        "otherinfo": "all,app"
+      },
+      "validation_rules": [
+        "cardIconTagList contains uppercase tags",
+        "Electric fuelType models have text 'EV' and designated iconUrl"
+      ]
+    },
+    "standard_test_cities": {
+      "gurgaon": 338,
+      "delhi": 269,
+      "mumbai": 105,
+      "bangalore": 54,
+      "jaipur": 168,
+      "ahmedabad": 7
+    }
+  },
+  "sniffing_rules": {
+    "cardekho_copy_leak_words": [
+      "riding",
+      "rider",
+      "two-wheeler",
+      "helmet",
+      "bike",
+      "scooter"
+    ],
+    "bikedekho_copy_leak_words": [
+      "driving",
+      "driver",
+      "four-wheeler",
+      "car"
+    ],
+    "runtime_error_signatures": [
+      "An Error Occurred",
+      "Please Try Again",
+      "Failed to load",
+      "Something went wrong",
+      "Network error"
+    ],
+    "visual_truncation_patterns": [
+      "Starting @.*\\.\\.\\.",
+      "Units So\\.\\.\\.",
+      "FRO\\.\\.\\."
+    ]
+  },
+  "fast_navigation": {
+    "drawer_settle_delay_sec": 0.5,
+    "skip_change_url_if_already_matching": true,
+    "auto_dismiss_keyboards": true
   }
 }

@@ -397,3 +397,42 @@ To ensure 100% zero-flakiness across real hardware devices and Android OS versio
   - Immediately stop dependent testing when build unavailable, install fails, app launch fails, environment unreachable, or device disconnected.
   - Mark affected downstream scenarios as `BLOCKED`.
   - Under no circumstances convert a `BLOCKED` test case into `PASS`.
+
+## 28. Anti-False-Positive & Component Fingerprinting Engine (Build Verification Gate)
+- **Mandatory App Version & Build Check:**
+  - Before executing on-device test cases for a new feature/PR, automatically inspect the installed app build info via ADB:
+    `adb shell dumpsys package <package> | grep -E "versionName|versionCode|lastUpdateTime"`
+  - Verify if the installed version aligns with the PR build or if it's the live store build.
+- **Strict Component Fingerprinting (Zero Legacy Pass):**
+  - NEVER mark a test as `PASS` based merely on finding legacy elements (e.g. general car title, standard price tab) if the ticket's newly mandated components (e.g. bottom sheet popup, hero chips, prompt pills, redesigned variant cards) are absent.
+  - If the new components cannot be located in the UI hierarchy, immediately mark the test **`FAILED / BLOCKED (BUILD_MISMATCH / FEATURE_NOT_IN_BUILD)`**.
+  - Proactively inform the user: *"Device par feature branch ka build install nahi hai (Live/Legacy build detected). PR merge ya correct APK install confirm karein."*
+
+## 29. Production & Staging Smart API Parameter Contract Engine
+- **Scope vs Version Parity (Zero Outdated Link Assumption):**
+  - Never blindly use outdated URLs or example links pasted in Jira descriptions (e.g. legacy V1 endpoints).
+  - If the ticket title, summary, or scope specifies `V2 API` (e.g. `[APP] Update in V2 API`), always validate the `/api/v2/` endpoints.
+- **Mandatory App Query Contract Completeness:**
+  - For Brand Models (`/api/v2/brand/models`): Query MUST include `slug=<brand>`, `cityId=<valid_city_id != 0>` (e.g. `cityId=338` or `cityId=269`), and `otherinfo=all,app` to trigger `popularUsedCars` and EV tags.
+  - For Models Filter (`/api/v2/brand/modelsFilter`): Query MUST include `slug=<brand>`, `fuelTypes=...`, `cityId=...`, and `otherinfo=all,app`.
+  - **Dual Verification (App + Web):** Before marking any API as failed or missing on Live/Staging, validate both the Web query structure and the App query structure.
+
+## 30. Automated Cross-Domain Leak, Toast Error & Visual Truncation Sniffer
+- On every device traversal step and screen capture:
+  - **Cross-Domain Copy Leaks:**
+    - On CarDekho (Car platform): Flag `"riding"`, `"rider"`, `"two-wheeler"`, `"helmet"`, `"bike"`, `"scooter"` as **P1 Domain Copy Leaks**.
+    - On BikeDekho (Bike platform): Flag `"driving"`, `"driver"`, `"four-wheeler"`, `"car"` as **P1 Domain Copy Leaks**.
+  - **Runtime Toast & Modal Error Sniffer:**
+    - Automatically inspect screen text and hierarchy for error signatures: `"An Error Occurred"`, `"Please Try Again"`, `"Failed to load"`, `"Something went wrong"`, `"Network error"`.
+    - If found, immediately capture evidence and flag a **P1 Runtime Defect**.
+  - **Visual Truncation Sniffer:**
+    - Sniff for truncated strings (`...`) inside critical stat cards, starting prices (e.g. `Starting @ ₹7.79 ...`), variant chips, or CTAs.
+
+## 31. Turbo Dual-Speed Execution & Zero-Latency Navigation Protocol
+- **Fast-Track URL Auto-Sync:**
+  - When checking `Change URL`, inspect current field values first. If already pointing to the target server (`staging` / `testingpwa` / `live`), skip re-typing and exit immediately to save 10-15 seconds.
+- **Drawer Animation Settlement:**
+  - When opening Hamburger Menu, allow a 500ms settlement window before tapping submenu items (`New Cars`, `Change URL`) to prevent inadvertent home-screen redirect loops.
+- **Dual-Speed Parallel Execution:**
+  - Execute API contract tests in fast async batch mode (sub-second) while running physical ADB on-device traversal for visual verification.
+  - Deliver 100% smooth, transparent step-by-step chat updates without lagging.

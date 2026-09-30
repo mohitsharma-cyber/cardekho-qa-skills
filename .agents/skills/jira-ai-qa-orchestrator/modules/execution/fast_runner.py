@@ -199,6 +199,123 @@ class FastRunner:
             return base, api
         return f"https://{key}", f"https://{key}/api"
 
+    def get_installed_build_info(self, package: str = "com.girnarsoft.cardekho") -> Dict[str, str]:
+        """Extracts app version, version code, and update timestamp from device."""
+        info = {"versionName": "Unknown", "versionCode": "Unknown", "lastUpdateTime": "Unknown"}
+        try:
+            cmd = ["adb"]
+            if self.serial:
+                cmd.extend(["-s", self.serial])
+            cmd.extend(["shell", "dumpsys", "package", package])
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+            for line in res.stdout.splitlines():
+                line_str = line.strip()
+                if "versionName=" in line_str and info["versionName"] == "Unknown":
+                    info["versionName"] = line_str.split("versionName=")[-1].split()[0]
+                elif "versionCode=" in line_str and info["versionCode"] == "Unknown":
+                    parts = line_str.split("versionCode=")
+                    if len(parts) > 1:
+                        info["versionCode"] = parts[1].split()[0]
+                elif "lastUpdateTime=" in line_str and info["lastUpdateTime"] == "Unknown":
+                    info["lastUpdateTime"] = line_str.split("lastUpdateTime=")[-1]
+        except Exception as e:
+            print(f"[WARN] Failed to read package build info: {e}")
+        return info
+
+    def dump_ui_hierarchy(self) -> str:
+        """Dumps and returns UI hierarchy text/XML for deterministic inspection."""
+        try:
+            cmd = ["adb"]
+            if self.serial:
+                cmd.extend(["-s", self.serial])
+            cmd.extend(["exec-out", "uiautomator", "dump", "/dev/tty"])
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=8)
+            xml_text = res.stdout
+            if not xml_text or "UI hierchary dumped to" in xml_text:
+                # Fallback to file dump
+                self.adb("shell uiautomator dump /sdcard/window_dump.xml")
+                xml_text = self.adb("shell cat /sdcard/window_dump.xml")
+            return xml_text
+        except Exception as e:
+            print(f"[WARN] Failed to dump UI hierarchy: {e}")
+            return ""
+
+    def sniff_defects(self, brand: str = "cardekho") -> List[Dict[str, Any]]:
+        """Scans current screen UI hierarchy for domain copy leaks, error dialogs, and text truncations."""
+        defects = []
+        xml_text = self.dump_ui_hierarchy()
+        if not xml_text:
+            return defects
+
+        brand_lower = brand.lower()
+        sniff_rules = self.knowledge.get("sniffing_rules", {})
+
+        # 1. Domain Copy Leaks
+        forbidden_keywords = (
+            sniff_rules.get("cardekho_copy_leak_words", ["riding", "rider", "two-wheeler", "helmet", "bike", "scooter"])
+            if "bike" not in brand_lower
+            else sniff_rules.get("bikedekho_copy_leak_words", ["driving", "driver", "four-wheeler", "car"])
+        )
+        for kw in forbidden_keywords:
+            if f'text="{kw}"' in xml_text.lower() or f' {kw} ' in xml_text.lower():
+                defects.append({
+                    "type": "COPY_DOMAIN_LEAK",
+                    "severity": "P1",
+                    "description": f"Domain leak: '{kw}' rendered on {brand} platform",
+                    "timestamp": time.time()
+                })
+
+        # 2. Runtime Error Signatures
+        error_signatures = sniff_rules.get("runtime_error_signatures", [
+            "An Error Occurred", "Please Try Again", "Failed to load", "Something went wrong", "Network error"
+        ])
+        for err in error_signatures:
+            if err.lower() in xml_text.lower():
+                defects.append({
+                    "type": "RUNTIME_ERROR_TOAST",
+                    "severity": "P1",
+                    "description": f"Error popup/toast detected on screen: '{err}'",
+                    "timestamp": time.time()
+                })
+
+        # 3. Truncation Patterns
+        import re
+        if re.search(r'text="[^"]*\.\.\."', xml_text):
+            matches = re.findall(r'text="([^"]*\.\.\.")"', xml_text)
+            for m in matches:
+                if any(k in m.lower() for k in ["start", "price", "lakh", "rs", "₹", "unit"]):
+                    defects.append({
+                        "type": "VISUAL_TRUNCATION",
+                        "severity": "P2",
+                        "description": f"Visual truncation detected on critical label: '{m}'",
+                        "timestamp": time.time()
+                    })
+
+        return defects
+
+    def verify_component_fingerprint(self, must_have: List[str], forbidden: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Ensures newly required components are present on screen to prevent false positives on legacy builds."""
+        xml_text = self.dump_ui_hierarchy()
+        missing = []
+        found_forbidden = []
+
+        for item in must_have:
+            if item.lower() not in xml_text.lower():
+                missing.append(item)
+
+        if forbidden:
+            for item in forbidden:
+                if item.lower() in xml_text.lower():
+                    found_forbidden.append(item)
+
+        passed = len(missing) == 0 and len(found_forbidden) == 0
+        return {
+            "passed": passed,
+            "missing_components": missing,
+            "unexpected_legacy_components": found_forbidden,
+            "status": "PASS" if passed else "BUILD_MISMATCH_OR_COMPONENT_MISSING"
+        }
+
     def ensure_server_url(self, target_server_key: str = "testingpwa1", brand: str = "cardekho") -> bool:
         """Deterministic server URL verification and update with execution mode support."""
         target_base, target_api = self.resolve_env_urls(target_server_key, brand=brand)
@@ -206,10 +323,17 @@ class FastRunner:
 
         self.wake_and_unlock()
 
-        # 1. Open drawer
-        self.tap("home", "hamburger_icon", delay=1.0)
+        # 1. Open drawer with 0.5s settle window
+        self.tap("home", "hamburger_icon", delay=0.8)
         # 2. Tap Change URL
-        self.tap("drawer", "change_url", delay=1.5)
+        self.tap("drawer", "change_url", delay=1.2)
+
+        # Check if already matching target
+        ui_dump = self.dump_ui_hierarchy()
+        if target_base.lower() in ui_dump.lower() and target_api.lower() in ui_dump.lower():
+            print(f"[FAST_RUNNER] URL is ALREADY matching {target_base}! Skipping redundant re-typing.")
+            self.tap("change_url_screen", "back_arrow", delay=0.5)
+            return True
 
         # 3. Update BASE URL
         self.tap("change_url_screen", "base_url_field", delay=0.3)
@@ -236,7 +360,7 @@ class FastRunner:
         self.capture_screenshot(checkpoint_img)
 
         # 7. Return to Home
-        self.tap("change_url_screen", "back_arrow", delay=1.0)
+        self.tap("change_url_screen", "back_arrow", delay=0.8)
         print(f"[SUCCESS] App environment successfully synchronized with {target_server_key} ({target_base})")
         return True
 
@@ -279,3 +403,4 @@ class FastRunner:
 if __name__ == "__main__":
     runner = FastRunner()
     print("FastRunner initialized for device:", runner.serial, "Mode:", runner.mode.value)
+
