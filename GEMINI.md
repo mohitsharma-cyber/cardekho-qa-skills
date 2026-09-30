@@ -374,3 +374,26 @@ To ensure 100% zero-flakiness across real hardware devices and Android OS versio
   - Always present the proposed status change and ask:
     > *"Kya ticket <KEY> ka status '<Target Status>' par transition karein? (Approve / Reject)"*
   - Only execute the transition upon receiving unambiguous user approval.
+
+## 27. Phase 1 Enterprise QA Engines (Risk, Smart Wait, Execution Modes, Honest Coverage, Targeted Regression & Stop Conditions)
+- **1. Risk & Impact Engine:**
+  - Automatically classify tickets into `LOW`, `MEDIUM`, `HIGH`, or `CRITICAL` based on blast radius (UI-only vs business logic vs API vs auth vs crash fix vs lead flow).
+  - Risk classification directly mandates testing depth: LOW (smoke/UI), MEDIUM (standard), HIGH (deep), CRITICAL (exhaustive).
+  - Never invent missing requirements; flag ambiguities directly.
+- **2. Smart Wait Engine:**
+  - Replace unnecessary fixed sleeps with condition-based, bounded polling (`wait_for_element`, `wait_for_text`, `wait_for_activity`, `wait_for_screen_change`, `wait_for_idle`, `wait_for_condition`).
+  - Retain deterministic micro-delays only where physical device input mechanics require it.
+- **3. Dual Execution Modes:**
+  - **Interactive Mode:** Step-by-step narration, detailed logging, per-step screencaps, configurable delay.
+  - **Autonomous / Fast Mode:** Condition-based waits, minimal settle delays, checkpoint milestones, automatic failure evidence capture.
+- **4. Honest Coverage Engine:**
+  - Independently track **Requirement Coverage**, **Test Execution Coverage**, and **Targeted Regression Coverage**.
+  - Valid statuses: `PASS`, `FAIL`, `BLOCKED`, `NOT_TESTED`, `NOT_APPLICABLE`.
+  - Never claim 100% coverage if any requirement or planned test is `BLOCKED`, `NOT_TESTED`, or `FAIL`.
+- **5. Targeted Regression Engine:**
+  - Use directed `DependencyGraph` to isolate 1st-degree collateral impact across screens, modules, APIs, and reference Jira tickets.
+  - Never run full-suite regression by default.
+- **6. Execution Stop Conditions:**
+  - Immediately stop dependent testing when build unavailable, install fails, app launch fails, environment unreachable, or device disconnected.
+  - Mark affected downstream scenarios as `BLOCKED`.
+  - Under no circumstances convert a `BLOCKED` test case into `PASS`.

@@ -1,0 +1,79 @@
+{
+  "risk_levels": {
+    "CRITICAL": {
+      "min_score": 75,
+      "testing_depth": "EXHAUSTIVE",
+      "min_test_cases": 8,
+      "required_categories": ["positive", "negative", "boundary", "ui_ux", "api_data", "crash_resilience", "targeted_regression"],
+      "description": "Crash fixes, authentication/auth token flows, payment/lead submissions, core purchase conversions, or breaking API changes."
+    },
+    "HIGH": {
+      "min_score": 50,
+      "testing_depth": "DEEP",
+      "min_test_cases": 6,
+      "required_categories": ["positive", "negative", "boundary", "ui_ux", "api_data", "targeted_regression"],
+      "description": "Business logic modifications, price/EMI calculations, complex search/filter algorithms, multi-screen navigation refactors."
+    },
+    "MEDIUM": {
+      "min_score": 25,
+      "testing_depth": "STANDARD",
+      "min_test_cases": 4,
+      "required_categories": ["positive", "negative", "ui_ux"],
+      "description": "Functional feature additions, interactive components, drawer/menu additions, reviews/specifications tabs."
+    },
+    "LOW": {
+      "min_score": 0,
+      "testing_depth": "SMOKE_AND_UI",
+      "min_test_cases": 2,
+      "required_categories": ["positive", "ui_ux"],
+      "description": "UI-only cosmetic modifications, typography/color adjustments, text label copy updates, static banner updates."
+    }
+  },
+  "keyword_weights": {
+    "crash": 40,
+    "fatal": 40,
+    "anr": 40,
+    "nullpointer": 35,
+    "exception": 30,
+    "auth": 35,
+    "login": 35,
+    "token": 30,
+    "otp": 35,
+    "session": 30,
+    "lead": 35,
+    "booking": 35,
+    "payment": 40,
+    "emi": 30,
+    "price": 25,
+    "calculation": 25,
+    "search": 25,
+    "filter": 20,
+    "api": 25,
+    "endpoint": 25,
+    "database": 30,
+    "navigation": 20,
+    "deep link": 25,
+    "deeplink": 25,
+    "server": 20,
+    "ui": 5,
+    "color": 5,
+    "font": 5,
+    "spacing": 5,
+    "alignment": 5,
+    "typo": 5,
+    "text copy": 5,
+    "banner": 10
+  },
+  "module_weights": {
+    "auth": 35,
+    "lead_flow": 35,
+    "payment": 40,
+    "pricing_engine": 30,
+    "search_engine": 25,
+    "model_page": 20,
+    "variant_page": 20,
+    "navigation_drawer": 15,
+    "settings_env": 20,
+    "ui_cosmetics": 5
+  }
+}

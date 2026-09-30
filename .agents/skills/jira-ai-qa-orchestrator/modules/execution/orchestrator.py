@@ -29,6 +29,13 @@ from modules.planning.test_planner import TestPlanner
 from modules.reporting.qa_reporter import QAReporter
 from modules.web.web_runner import WebRunner
 from database.db_manager import DatabaseManager
+from modules.risk.risk_engine import RiskEngine
+from modules.risk.impact_analyzer import ImpactAnalyzer
+from modules.regression.regression_selector import RegressionSelector
+from modules.coverage.coverage_engine import CoverageEngine, TestStatus
+from modules.execution.stop_conditions import StopConditionManager, StopReason
+from modules.execution.wait_engine import WaitEngine
+from modules.execution.fast_runner import FastRunner, ExecutionMode
 
 
 class ExecutionStateMachine:
@@ -107,6 +114,12 @@ class ExecutionStateMachine:
         self.jenkins_deployer = JenkinsDeployer()
         self.net_capture = NetworkCapture()
         self.failure_analyzer = FailureAnalyzer()
+        self.risk_engine = RiskEngine()
+        self.impact_analyzer = ImpactAnalyzer()
+        self.regression_selector = RegressionSelector()
+        self.coverage_engine = CoverageEngine()
+        self.stop_manager = StopConditionManager()
+        self.wait_engine = WaitEngine()
 
         self.current_state = "TICKET_SELECTED"
         self.is_paused = False
@@ -499,6 +512,7 @@ class ExecutionStateMachine:
             assertion_report = AssertionEngine.evaluate_test_case(tc, res)
             tc["status"] = assertion_report["status"]
             tc["actual_result"] = assertion_report["summary"]
+            tc["actual"] = assertion_report["summary"]
             tc["duration_ms"] = res.get("duration_ms", 120)
             tc["evidence"] = {
                 "screenshot": res.get("screenshot"),

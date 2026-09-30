@@ -16,3 +16,9 @@ null
 *.sqlite3
 scratch/
 temp_qa/
+scratch_*.json
+**/scratch_*.json
+sample_logs.json
+output/
+input/
+Updated_CarDekho_DeepLinks_Final.csv

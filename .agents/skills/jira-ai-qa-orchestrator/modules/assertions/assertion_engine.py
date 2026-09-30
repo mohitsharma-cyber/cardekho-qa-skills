@@ -70,6 +70,36 @@ class AssertionEngine:
                 return True, "Application remained active and stable without crashing"
             return False, "Application crash or fatal exception detected"
 
+        # 7. Visual Design & Product Quality Audit
+        elif kind == "VISUAL_DESIGN_AUDIT":
+            from ..visual.visual_inspector import VisualDesignInspector
+            inspector = VisualDesignInspector()
+            audit = inspector.audit_screen(
+                ui_elements=evidence_context.get("ui_elements"),
+                hierarchy_xml=evidence_context.get("hierarchy_xml"),
+                page_text=evidence_context.get("page_text", ""),
+                screen_width=evidence_context.get("screen_width", 1080),
+                screen_height=evidence_context.get("screen_height", 2400)
+            )
+            fail_on_cosmetic = assertion_spec.get("fail_on_cosmetic", False)
+            if fail_on_cosmetic and audit["has_visual_defects"]:
+                return False, f"Visual Audit Failed: {audit['total_defects']} visual/copy defects found. {audit['summary']}"
+            elif audit["has_blockers"]:
+                blocker_desc = "; ".join([b["description"] for b in audit["blockers"][:2]])
+                return False, f"Visual Blocker Detected: {blocker_desc}"
+            return True, f"Visual Audit Passed: {audit['summary']}"
+
+        # 8. No Template Leaks Assertion (%s, ₹₹, undefined, NaN)
+        elif kind == "NO_TEMPLATE_LEAKS":
+            from ..visual.visual_inspector import VisualDesignInspector
+            inspector = VisualDesignInspector()
+            text = str(evidence_context.get("page_text", ""))
+            defects = inspector.check_microcopy_tokens(text)
+            blockers = [d for d in defects if d.get("severity") in ["P0", "P1"]]
+            if blockers:
+                return False, f"Template Token Leak: {blockers[0]['description']}"
+            return True, "Clean micro-copy: zero unrendered template tokens detected"
+
         # Default fallback
         return True, "Assertion passed"
 

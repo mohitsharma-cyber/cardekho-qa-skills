@@ -240,13 +240,20 @@ class TestPlanner:
             "recommendation": "Jira steps verified and ready for execution."
         }
 
-    def generate_plan(self, ticket: Dict[str, Any], analysis: Dict[str, Any], environment: str = "TESTING") -> Dict[str, Any]:
+    def generate_plan(
+        self,
+        ticket: Dict[str, Any],
+        analysis: Dict[str, Any],
+        environment: str = "TESTING",
+        deep_bug_hunting: Optional[bool] = None
+    ) -> Dict[str, Any]:
         """
         Generates a complete test strategy plan with prioritized test cases (P0-P3)
         supporting Mode A (Jira Steps), Mode B (AI Test Generation), and Mode C (Partial Steps).
-        Includes dependency tracking and deterministic validation methods.
+        Includes dependency tracking, attack surface targeting, and deterministic validation methods.
         """
         key = ticket.get("key", "TKT-000")
+
         summary = ticket.get("summary", "")
         description = ticket.get("description", "")
         acceptance_criteria = ticket.get("acceptance_criteria", "")
@@ -307,6 +314,10 @@ class TestPlanner:
             "category": "DIRECT",
             "priority": "P0",
             "risk": "CRITICAL",
+            "attack_surface": "DIRECT_ACCEPTANCE",
+            "bug_target": f"Direct functional non-conformance or fatal crash on {summary}",
+            "vulnerability_hypothesis": "Feature fails baseline acceptance criteria, triggers null pointer or layout break on primary entry.",
+            "breaking_action": "Execute primary user traversal flow and verify complete view rendering within 10s.",
             "source": tc01_source,
             "preconditions": f"Application active in {environment} environment with required test data available.",
             "test_data": "{\"scenario\": \"primary_happy_path\", \"valid_input\": true}",
@@ -335,6 +346,10 @@ class TestPlanner:
             "category": "NEGATIVE_BOUNDARY",
             "priority": "P1",
             "risk": "HIGH",
+            "attack_surface": "DATA_PAYLOAD_ANOMALIES",
+            "bug_target": "Unescaped HTML tags (<p>, <b>), null pointer exceptions, or unhandled invalid boundary input",
+            "vulnerability_hypothesis": "Backend response returns raw unescaped tags or null values that leak into UI or crash view render.",
+            "breaking_action": "Inject extreme boundary/invalid payloads and verify null safety and sanitization in UI elements.",
             "source": "AI_DERIVED_TEST",
             "preconditions": f"Application active in {environment} with target screen reachable.",
             "test_data": "{\"scenario\": \"boundary_check\", \"invalid_payload\": \"<>&'\"}",
@@ -370,6 +385,10 @@ class TestPlanner:
             "category": "IMPACTED_REGRESSION",
             "priority": "P1",
             "risk": "MEDIUM",
+            "attack_surface": "STATE_LIFECYCLE",
+            "bug_target": "State loss, filter reset, or navigation stack corruption during adjacent routing",
+            "vulnerability_hypothesis": "Screen transitions or back navigation drop transient component state or corrupt screen cache.",
+            "breaking_action": "Perform back and forward navigation across adjacent screens and assert retained state.",
             "source": "AI_DERIVED_TEST",
             "preconditions": f"{primary_screen} loaded.",
             "test_data": "{\"action\": \"back_and_forward_navigation\"}",
@@ -405,6 +424,10 @@ class TestPlanner:
             "category": "EXTENDED_REGRESSION",
             "priority": "P2",
             "risk": "LOW",
+            "attack_surface": "PLATFORM_PARITY",
+            "bug_target": "Deep link misrouting, 404 screen, or redirect loop",
+            "vulnerability_hypothesis": "Direct URI entry fails to resolve required entity parameters, leading to empty or broken screen.",
+            "breaking_action": "Invoke direct deep link intent from background state.",
             "source": "AI_DERIVED_TEST",
             "preconditions": "Fresh browser/app session.",
             "test_data": f"{{\"deep_link\": \"cardekho://{primary_screen.lower().replace(' ', '_')}\"}}",
@@ -428,9 +451,154 @@ class TestPlanner:
             "evidence": []
         })
 
+        is_deep_hunting = (
+            deep_bug_hunting if deep_bug_hunting is not None
+            else analysis.get("deep_bug_hunting", analysis.get("bug_hunting", False))
+        )
+
+        if is_deep_hunting:
+            # TC 05: P1 - Rapid Actions, Double-Click Debounce & Concurrency
+            tc05_id = f"{key}-TC-05"
+            test_cases.append({
+                "test_case_id": tc05_id,
+                "ticket_key": key,
+                "title": f"Verify rapid action debounce and concurrency resilience for {summary}",
+                "objective": "Prevent duplicate submissions, double lead generation, or race condition freezes upon rapid taps.",
+                "category": "RAPID_ACTIONS_DEBOUNCE",
+                "priority": "P1",
+                "risk": "HIGH",
+                "attack_surface": "RAPID_ACTIONS_DEBOUNCE",
+                "bug_target": "Duplicate lead/order submission or UI state freeze on rapid repeated clicks",
+                "vulnerability_hypothesis": "Missing client-side debounce allows multiple API requests or inconsistent state on rapid tapping.",
+                "breaking_action": "Execute rapid double-tap on primary CTA and switch tabs in <300ms intervals.",
+                "source": "AI_DERIVED_TEST",
+                "preconditions": f"{primary_screen} ready for user interaction.",
+                "test_data": "{\"interval_ms\": 250, \"rapid_taps\": 2}",
+                "steps": [
+                    {"step_num": 1, "action": f"Focus primary interactive element on {primary_screen}", "locator": "action_button", "source": "AI_DERIVED_TEST"},
+                    {"step_num": 2, "action": "Trigger rapid double-tap (<300ms) on CTA", "locator": "action_button", "source": "AI_DERIVED_TEST"},
+                    {"step_num": 3, "action": "Verify single network request dispatch and no UI freeze", "locator": "content_area", "source": "AI_DERIVED_TEST"}
+                ],
+                "expected_result": "Only one submission is processed; second tap is debounced cleanly without freeze or duplicate entries.",
+                "validation_method": "UI+API",
+                "dependencies": [tc01_id],
+                "required_environment": environment,
+                "device_required": device_req,
+                "api_required": True,
+                "assertion_definition": {
+                    "type": "DETERMINISTIC",
+                    "assertions": [
+                        {"kind": "NO_CRASH", "expected": True}
+                    ]
+                },
+                "status": "NOT_EXECUTED",
+                "evidence": []
+            })
+
+            # TC 06: P2 - API Failure Simulation & Shimmer Clearance (Depends on TC01)
+            tc06_id = f"{key}-TC-06"
+            test_cases.append({
+                "test_case_id": tc06_id,
+                "ticket_key": key,
+                "title": f"Verify API failure graceful degradation and shimmer threshold (<10s)",
+                "objective": "Ensure screen clears loading state within 10s and shows friendly retry options upon API error.",
+                "category": "API_FAILURE_SIMULATION",
+                "priority": "P2",
+                "risk": "MEDIUM",
+                "attack_surface": "API_FAILURE_SIMULATION",
+                "bug_target": "Indefinite loading shimmer (>10s) or crash on API timeout/5xx error",
+                "vulnerability_hypothesis": "App fails to dismiss shimmer or crashes when backend endpoint times out or returns 500.",
+                "breaking_action": "Poll shimmer clearance within 10s and verify retry UI presence.",
+                "source": "AI_DERIVED_TEST",
+                "preconditions": f"Application active in {environment}.",
+                "test_data": "{\"timeout_threshold_s\": 10}",
+                "steps": [
+                    {"step_num": 1, "action": f"Initiate data fetch on {primary_screen}", "locator": "screen_root", "source": "AI_DERIVED_TEST"},
+                    {"step_num": 2, "action": "Poll screen for shimmer clearance within 10 seconds", "locator": "shimmer_view", "source": "AI_DERIVED_TEST"},
+                    {"step_num": 3, "action": "Verify content renders or friendly retry CTA appears", "locator": "retry_cta", "source": "AI_DERIVED_TEST"}
+                ],
+                "expected_result": "Shimmer clears within 10 seconds; error state offers a functional retry CTA without crash.",
+                "validation_method": "UI",
+                "dependencies": [tc01_id],
+                "required_environment": environment,
+                "device_required": device_req,
+                "api_required": False,
+                "assertion_definition": {
+                    "type": "DETERMINISTIC",
+                    "assertions": [
+                        {"kind": "NO_CRASH", "expected": True}
+                    ]
+                },
+                "status": "NOT_EXECUTED",
+                "evidence": []
+            })
+
+            # TC 07: P3 - Device System Interrupts & Soft Keyboard Occlusion
+            tc07_id = f"{key}-TC-07"
+            test_cases.append({
+                "test_case_id": tc07_id,
+                "ticket_key": key,
+                "title": f"Verify device system interrupts and soft keyboard occlusion",
+                "objective": "Confirm soft keyboard does not occlude primary actions and dismisses on back or tap outside.",
+                "category": "DEVICE_SYSTEM_INTERRUPTS",
+                "priority": "P3",
+                "risk": "LOW",
+                "attack_surface": "DEVICE_SYSTEM_INTERRUPTS",
+                "bug_target": "Soft keyboard obscuring primary action CTA or unhandled permission crash",
+                "vulnerability_hypothesis": "Software keyboard remains open over bottom sheet buttons or permission revoke crashes app.",
+                "breaking_action": "Open input fields and verify CTA visibility and keyboard dismissal.",
+                "source": "AI_DERIVED_TEST",
+                "preconditions": "Physical Android device connected.",
+                "test_data": "{\"check\": \"keyboard_occlusion_and_permissions\"}",
+                "steps": [
+                    {"step_num": 1, "action": "Focus input or open bottom modal", "locator": "input_or_modal", "source": "AI_DERIVED_TEST"},
+                    {"step_num": 2, "action": "Verify keyboard dismissal upon action or navigation", "locator": "soft_keyboard", "source": "AI_DERIVED_TEST"}
+                ],
+                "expected_result": "Soft keyboard dismisses cleanly without obscuring action buttons or causing crashes.",
+                "validation_method": "UI",
+                "dependencies": [],
+                "required_environment": environment,
+                "device_required": device_req,
+                "api_required": False,
+                "assertion_definition": {
+                    "type": "DETERMINISTIC",
+                    "assertions": [
+                        {"kind": "NO_CRASH", "expected": True}
+                    ]
+                },
+                "status": "NOT_EXECUTED",
+                "evidence": []
+            })
+
+        # Enforce 7-Tuple Internal Contract across ALL test scenarios:
+        # Requirement → Risk → Attack Scenario → Bug Discovery Target → Expected → Actual → Evidence
+        for tc in test_cases:
+            tc["requirement"] = tc.get("requirement") or tc.get("objective") or f"Functional requirement for {summary}"
+            tc["risk"] = tc.get("risk") or "MEDIUM"
+            tc["attack_scenario"] = tc.get("attack_scenario") or tc.get("breaking_action") or tc.get("title") or "Execute targeted flow"
+            tc["bug_discovery_target"] = tc.get("bug_discovery_target") or tc.get("bug_target") or "Identify functional deviations or unhandled errors"
+            tc["expected"] = tc.get("expected") or tc.get("expected_result") or "System behaves as expected without crash"
+            tc["actual"] = tc.get("actual") or tc.get("actual_result") or ""
+            if "evidence" not in tc or tc["evidence"] is None:
+                tc["evidence"] = []
+
+            # Maintain reciprocal aliases for 100% backwards compatibility
+            if "expected_result" not in tc:
+                tc["expected_result"] = tc["expected"]
+            if "actual_result" not in tc:
+                tc["actual_result"] = tc["actual"]
+            if "breaking_action" not in tc:
+                tc["breaking_action"] = tc["attack_scenario"]
+            if "bug_target" not in tc:
+                tc["bug_target"] = tc["bug_discovery_target"]
+
         strategy = {
+            "bug_hunting_mission": "BREAK THE FEATURE BEFORE THE USER DOES.",
             "requirement_understanding": f"Validate {summary} against {environment} requirements.",
             "impact_analysis": f"Primary module: {primary_screen}. APIs: {', '.join(analysis.get('dependencies', {}).get('apis', []))}.",
+            "attack_surfaces_covered": sorted(list(set(tc["attack_surface"] for tc in test_cases if "attack_surface" in tc))),
+            "attack_dimensions_analyzed": analysis.get("attack_surface", {}).get("attack_dimensions", {}),
+            "seven_tuple_contract": "Requirement → Risk → Attack Scenario → Bug Discovery Target → Expected → Actual → Evidence",
             "risk_analysis": {
                 "functional_risks": analysis.get("risks", {}).get("functional_risks", []),
                 "regression_risks": analysis.get("risks", {}).get("regression_risks", [])

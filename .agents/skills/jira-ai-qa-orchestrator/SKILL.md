@@ -1,17 +1,20 @@
 ---
 name: jira-ai-qa-orchestrator
 description: >-
-  Enterprise AI QA Orchestrator for CarDekho and BikeDekho. Analyzes Jira tickets assigned to the QA engineer, performs functional and regression risk analysis, generates deterministic test cases, manages Testing/Staging environment auto-configuration in the Android app (Hamburger > Change URL), orchestrates Web and Android device execution, redacts API data, enforces deterministic assertions, conducts AI failure triage, and outputs QA sign-off reports.
+  Enterprise Risk-Based Autonomous Bug-Hunting QA Orchestrator for CarDekho and BikeDekho. Motto: 'BREAK THE FEATURE BEFORE THE USER DOES.' Analyzes Jira tickets, identifies attack surfaces, derives aggressive breaking scenarios, manages environment auto-configuration (Hamburger > Change URL), orchestrates Web and Android device execution, validates defect reproducibility, enforces deterministic assertions, conducts AI failure triage, and outputs QA sign-off reports.
 ---
 
-# Master Jira AI Android QA Orchestrator
+# Master Jira AI Android QA Orchestrator: Risk-Based Autonomous Bug-Hunting
 
 The **Jira AI QA Orchestrator** is an enterprise QA automation platform and skill for CarDekho & BikeDekho QA engineers.
-It transitions from an interactive Jira ticket queue to requirement analysis, risk-driven test planning, deployment verification gates, environment auto-configuration, deterministic execution, and formal QA sign-off reporting.
+**Primary Mission:** Transform QA testing into a **risk-based autonomous bug-hunting mission**.
+**Motto:** *“BREAK THE FEATURE BEFORE THE USER DOES.”*
+The primary objective is **maximum meaningful, reproducible defect discovery**, not maximum PASS percentage or test case count.
 
 ---
 
 ## 1. Core Principles (Zero Hallucination & Zero False Pass)
+- **MISSION MOTTO**: "BREAK THE FEATURE BEFORE THE USER DOES."
 - **RULE 1**: Generated test case != Executed test case.
 - **RULE 2**: Executed test != Passed test.
 - **RULE 3**: PASS is allowed only when actual execution evidence satisfies expected deterministic assertions.
@@ -25,6 +28,27 @@ It transitions from an interactive Jira ticket queue to requirement analysis, ri
 - **RULE 11**: 100% Chat-Native Workflow. Zero dependency on external dashboards or port 8080 web servers.
 - **RULE 12**: Strict Verbatim Steps Execution. When a Jira ticket lists 'Steps to Reproduce' or test navigation steps, the agent must execute those exact steps sequentially on the device without ad-hoc shortcuts.
 - **RULE 13**: App Build Branch Gate. When an App code/build branch is provided in a Jira ticket, ask strictly: "App already installed or not?". As soon as the user says "done", immediately trigger the next execution steps without any intermediate gates.
+- **RULE 14**: Attack Surface Coverage. Every ticket must derive relevant attack vectors (inputs, debounce, lifecycle, payload anomalies, API errors, interrupts) to aggressively challenge stability.
+- **RULE 15**: Multi-Stage Defect Validation. Every discovered failure must undergo reproducibility testing (100% deterministic vs intermittent) and layer attribution before bug card generation.
+- **RULE 16**: 12-Question Pre-Execution Attack Analysis. Before triggering execution, intelligently analyze:
+  1. What can break?
+  2. What can crash?
+  3. What can show incorrect data?
+  4. What happens with invalid/missing/null data?
+  5. What happens at boundaries?
+  6. What happens after repeated/rapid actions?
+  7. What happens during loading/empty/error states?
+  8. What happens after back/refresh/relaunch?
+  9. Can UI and API become inconsistent?
+  10. Can App and WAP behave differently?
+  11. What related regression areas can be affected?
+  12. Are there historical defects indicating similar risks?
+- **RULE 17**: Mandatory 7-Tuple Test Case Contract. Every test scenario must internally maintain:
+  `Requirement → Risk → Attack Scenario → Bug Discovery Target → Expected → Actual → Evidence`.
+- **RULE 18**: Deterministic 7-Step Anomaly Pipeline. When an anomaly appears, execute:
+  `Detect → Reproduce → Investigate → Classify → Duplicate Check → Evidence → Bug Card`.
+  Expected behaviors or unverified observations (0% reproduction) must NEVER be reported as defects.
+
 
 ---
 
@@ -108,23 +132,31 @@ It transitions from an interactive Jira ticket queue to requirement analysis, ri
   - If Jira steps are impossible, contradictory, or ambiguous:
   - Halts with `JIRA STEP VALIDATION FAILED` before invoking device actions.
 
-### 5.1 Senior QA Jira Testing Flow
-For every Jira task, follow this sequence:
+### 5.1 Senior QA Bug-Hunting Lifecycle Sequence
+For every Jira task, follow this exact bug-hunting lifecycle:
 1. **Understand Requirement** – Analyze description, acceptance criteria, expected behavior, dependencies, and ambiguities.
-2. **Impact & Risk Analysis** – Identify affected screens, APIs, modules, platforms, and possible regression areas.
-3. **Clarify Gaps** – Detect missing/ambiguous requirements and get clarification before testing.
-4. **Create Test Coverage** – Prepare positive, negative, boundary, error, and edge-case scenarios.
-5. **Validate Environment** – Verify build, server/environment, test data, device, login/session, and dependencies.
-6. **Execute Functional Testing** – Validate the complete user flow against requirements.
-7. **Validate APIs/Data** – Where applicable, verify API status, response, data mapping, errors, and UI/API consistency.
-8. **Compatibility Testing** – Check relevant devices, Android versions, screen sizes, network conditions, and permissions.
-9. **Regression Testing** – Test impacted existing functionality, not just the changed feature.
-10. **Defect Management** – Reproduce issues, collect evidence, identify probable layer/root cause, and create detailed Jira bugs.
-11. **Retest Fixes** – Re-test the original defect and perform relevant regression after the fix.
-12. **QA Sign-off** – Mark PASS only when acceptance criteria, functional coverage, relevant regression, and critical validations are complete. If blocked or failed, clearly document the reason and evidence.
+2. **Identify Risk** – Evaluate architectural blast radius, cross-module spillover, crash risk, and business impact.
+3. **Identify Attack Surface** – Map the 7 vulnerability vectors (input boundaries, debounce, lifecycle, payload anomalies, API errors, parity, interrupts).
+4. **Try to Break the Feature** – Generate and execute aggressive, targeted breaking scenarios with concrete vulnerability hypotheses.
+5. **Validate Failure** – Distinguish between true application defects, expected behavior, duplicates, and environment flakes; test reproducibility (100% deterministic vs intermittent).
+6. **Capture Evidence** – Collect objective proof (screencap, logcat, API payload, network timing, reproduction steps).
+7. **Detect Duplicates** – Scan existing project tickets and open bugs to prevent redundant logging.
+8. **Report Defect** – Format structured Bug Cards with layer attribution and present in chat for human approval.
+9. **Targeted Regression** – Traverse dependency graphs to verify adjacent and extended flows without full collateral bloat.
+10. **QA Sign-off** – Enforce honest metrics; never claim 100% unless requirement, execution, regression, risk, and negative coverage are all fully verified.
 
 **Core Principle:**
-`Requirement → Risk Analysis → Test Coverage → Execution → API/Data Validation → Regression → Defect/Retest → QA Sign-off`
+`Understand Requirement → Identify Risk → Identify Attack Surface → Try to Break the Feature → Validate Failure → Capture Evidence → Detect Duplicates → Report Defect → Targeted Regression → QA Sign-off`
+
+### 5.2 Attack Surface Intelligence & 7 Core Vectors
+1. **INPUT_BOUNDARIES**: Empty inputs, whitespace, max string lengths, emojis, SQL/XSS tokens, negative/zero numbers, decimal overflow.
+2. **RAPID_ACTIONS_DEBOUNCE**: Rapid double-taps on CTAs, rapid tab switching (Model ➔ Specs ➔ Price), rapid filter toggling, debounce failures.
+3. **STATE_LIFECYCLE**: App background/foreground restoration (3s backgrounding), screen rotation, back-stack cache integrity, session retention.
+4. **DATA_PAYLOAD_ANOMALIES**: Unescaped HTML tags (`<p>`, `<b>`, `&nbsp;`) leaking into UI, null/missing JSON keys causing NPEs, currency formatting/rounding anomalies.
+5. **API_FAILURE_SIMULATION**: 4xx/5xx responses, network timeouts (>10s), indefinite shimmer polling, graceful degradation and retry CTA presence.
+6. **PLATFORM_PARITY**: Layout, typography, CTA placement, price calculations, and feature consistency across Android App vs WAP vs Web.
+7. **DEVICE_SYSTEM_INTERRUPTS**: Soft keyboard occluding action buttons, keyboard dismissal verification, system permission handling without crashes.
+
 
 ---
 
@@ -343,3 +375,359 @@ For every Jira task, follow this sequence:
   - Always ask:
     > *"Kya ticket <KEY> ka status '<Target Status>' par transition karein? (Approve / Reject)"*
   - Only execute upon receiving explicit user confirmation.
+
+---
+
+## 12. Enterprise QA Engines (Phase 1 Upgrades)
+
+### 12.1 Risk & Impact Engine (`modules/risk/`)
+- **Risk Levels**: `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`
+- **Blast Criteria**: UI-only cosmetic changes (LOW), standard functional additions (MEDIUM), business logic/pricing/search/auth (HIGH), crash/ANR fixes and payment/lead pipelines (CRITICAL).
+- **Testing Depth Mapping**:
+  - `LOW`: `SMOKE_AND_UI` (min 2 test cases)
+  - `MEDIUM`: `STANDARD` (min 4 test cases: positive, negative, ui_ux)
+  - `HIGH`: `DEEP` (min 6 test cases: positive, negative, boundary, ui_ux, api_data, targeted_regression)
+  - `CRITICAL`: `EXHAUSTIVE` (min 8 test cases: positive, negative, boundary, ui_ux, api_data, crash_resilience, targeted_regression)
+- **Zero Hallucination Rule**: Flags missing requirements without inventing unstated acceptance criteria.
+
+### 12.2 Smart Wait Engine (`modules/execution/wait_engine.py`)
+- Replaces arbitrary fixed sleeps with condition-based, bounded polling:
+  - `wait_for_element(selector, timeout=10, poll_interval=0.5)`
+  - `wait_for_text(text, timeout=10, poll_interval=0.5)`
+  - `wait_for_activity(activity_name, timeout=10, poll_interval=0.5)`
+  - `wait_for_screen_change(prev_fingerprint, timeout=10, poll_interval=0.5)`
+  - `wait_for_idle(timeout=5, poll_interval=0.5)`
+  - `wait_for_condition(condition_fn, timeout=10, poll_interval=0.5)`
+- Preserves deterministic micro-settle delays where genuinely required by Android input subsystem.
+
+### 12.3 Dual Execution Modes (`modules/execution/fast_runner.py`)
+- **Interactive Mode**: Step-by-step narration, detailed logging, per-step screencaps, and configurable operator delays.
+- **Autonomous / Fast Mode**: Condition-based waits via `WaitEngine`, minimal settle delay, milestone checkpoint evidence, and automated failure evidence extraction (screenshot + logcat dump).
+
+### 12.4 Honest Coverage Engine (`modules/coverage/`)
+- Independently tracks:
+  1. **Requirement Coverage** (ACs mapped vs verified)
+  2. **Test Execution Coverage** (planned vs executed test cases)
+  3. **Targeted Regression Coverage** (collateral scenarios executed vs planned)
+- **Supported Statuses**: `PASS`, `FAIL`, `BLOCKED`, `NOT_TESTED`, `NOT_APPLICABLE`
+- **Honesty Mandate**: 100% coverage claim is strictly rejected if any requirement or planned test is `NOT_TESTED`, `BLOCKED`, or `FAIL`.
+
+### 12.5 Targeted Regression Engine (`modules/regression/`)
+- Directed `DependencyGraph` maps automotive screens, modules, and API gateways.
+- `RegressionSelector` selects strictly 1st-degree collateral scenarios (e.g. Price tab change tests Model CTA and Variant selector, excluding non-impacted modules).
+- Incorporates Reference Jira ticket information for surrounding regression.
+- Never executes wasteful full-suite regression by default.
+
+### 12.6 Execution Stop Conditions (`modules/execution/stop_conditions.py`)
+- Stops dependent execution immediately upon:
+  - `BUILD_UNAVAILABLE`
+  - `INSTALLATION_FAILED`
+  - `APP_LAUNCH_FAILED`
+  - `ENVIRONMENT_UNAVAILABLE`
+  - `CRITICAL_DEPENDENCY_UNAVAILABLE`
+  - `DEVICE_DISCONNECTED`
+- Automatically marks all dependent downstream scenarios as `BLOCKED`.
+- **Golden Safety Gate**: BLOCKED test cases can NEVER be converted into PASS.
+
+---
+
+## 13. Reference Jira & WAP Parity Engines (Phase 2 Upgrades)
+
+### 13.1 Reference Jira Engine (`modules/reference/`)
+- **Reference Resolution (`reference_jira_resolver.py`)**:
+  - Detects Reference Jira IDs from text patterns (`reference: <ID>`, `same as <ID>`, `refer <ID>`, `parity with <ID>`) and issue links (`Relates`, `Cloners`, `Causes`).
+  - Fetches complete context: Description, Acceptance Criteria, Comments, Attachments, and Screenshots.
+  - Handles `MISSING_ID` and `INACCESSIBLE` (404/403) states gracefully without crashing or assuming details.
+- **Behavioral Analysis (`reference_behavior_analyzer.py`)**:
+  - Validates information sufficiency before generating test cases.
+  - **Sufficiency Gate**: If reference lacks actionable criteria or text, immediately marks:
+    `BLOCKED / CLARIFICATION REQUIRED` (Zero Guesswork Mandate: never invent behavior).
+  - Extracts expected behaviors: UI components, functional rules, CTAs, navigation flows, dynamic data mapping, edge cases.
+  - Derives numbered, Android-specific test scenarios (`TC-REF-01`, `TC-REF-02`, etc.) tailored for mobile device execution.
+
+### 13.2 WAP Reference Engine
+- Automatically triggered when Jira specifies: `Implement in App same as WAP`, `same as mweb`, or `parity with wap`.
+- Resolves relevant target WAP page/URL based on brand (`CarDekho` vs `BikeDekho`) and active vehicle/feature screen.
+- Evaluates parity across **11 core dimensions**:
+  1. **UI** (Layout, typography, cards, badges)
+  2. **Functionality** (Form submissions, calculations, interactive widgets)
+  3. **Data** (Prices, variant specs, names)
+  4. **CTA** (Button labels, triggers, actions)
+  5. **Navigation** (Routing, back-stack, tabs)
+  6. **Filters** (Selection, reset, multiselect)
+  7. **Validation** (Input constraints, error messages)
+  8. **Loading** (Shimmer skeletons, progress bars)
+  9. **Empty State** (Zero data graphics, blank view handling)
+  10. **Error State** (Network error banners, retry prompts)
+  11. **API Behavior** (Endpoints, parameters, response contracts)
+
+### 13.3 Structured Comparison Model (`comparison_engine.py`)
+- Employs a standardized JSON comparison format:
+  ```json
+  {
+    "area": "CTA",
+    "reference": "Explore Now",
+    "android": "Explore Now",
+    "status": "PASS"
+  }
+  ```
+- **Supported Parity Statuses**:
+  - `PASS`: Perfect functional or visual parity.
+  - `FAIL`: Unjustified discrepancy or divergence from reference.
+  - `EXPECTED_PLATFORM_DIFFERENCE`: Legitimate mobile UX adaptation (e.g. Android native bottom-sheet dialog vs web floating dropdown; Android system back key vs browser breadcrumbs).
+  - `NOT_TESTED`: Scope item not yet evaluated on device.
+  - `BLOCKED`: Comparison prevented by missing dependency or prerequisite failure.
+- Computes comprehensive parity percentages and isolates discrepancies for QA triage.
+
+---
+
+## 14. Reliable API-Level Validation Engine (Phase 3 Upgrades)
+
+### 14.1 Architecture & Core Components (`modules/api/`)
+- **API Client (`api_client.py`)**:
+  - Executes HTTP requests (GET, POST, PUT, DELETE) with custom timeouts.
+  - Accurately captures round-trip latency in milliseconds.
+  - Traps `Timeout` (408), `ConnectionError` (503), and server exceptions cleanly.
+  - Strictly sanitizes sensitive authentication headers (`Authorization`, `x-api-key`, `Cookie`) and payload secrets (`password`, `token`, `otp`).
+- **Response Assertions Suite (`response_assertions.py`)**:
+  - Deterministically evaluates:
+    - **HTTP Status Code**: exact match or allowed status list.
+    - **Response Time**: verifies latency against SLA thresholds (e.g. `<= 2000ms`).
+    - **Schema Structure**: verifies top-level and nested JSON schema keys.
+    - **Required Fields**: verifies presence of mandatory keys using dot-notation (`data.pricing.rto`).
+    - **Null-Safety Handling**: detects unexpected `null` values in non-nullable fields.
+    - **Business Data**: verifies values match business specifications.
+    - **Error Payloads**: validates structured error responses (`errorCode`, `message`).
+    - **UI / API Data Consistency**: normalizes currency symbols, commas, and unit suffixes (`₹ 19.20 Lakh` vs `1920000`) to confirm on-screen rendered data reflects backend API payloads.
+- **API Validator & Telemetry Formatter (`api_validator.py`)**:
+  - Coordinates multi-point response evaluation and outputs standardized telemetry cards:
+    ```text
+    API Status: 200
+    Response Time: 342 ms
+    Schema: PASS
+    Required Fields: PASS
+    UI/API Data Match: PASS
+    ```
+- **Conditional Execution Engine (`should_execute_api_testing`)**:
+  - API validation does **NOT** run for every Jira ticket.
+  - It runs conditionally when:
+    1. Ticket explicitly touches backend API endpoints or payload contracts.
+    2. Feature functionally depends on API data.
+    3. Data integrity is relevant (prices, taxes, specs, EMI calculations).
+    4. Reference Jira or WAP parity comparison requires API verification.
+    5. Risk Engine flags `api_dependencies` or assigns `api_data` testing depth.
+  - **Bypassed** for UI-only cosmetic changes (color, typography, padding).
+- **API Evidence Storage (`api_capture.py`)**:
+  - Persists structured API evidence linked to:
+    - `jira_ticket`
+    - `test_case`
+    - `endpoint`
+    - `timestamp`
+    - `status`
+    - `response_time`
+    - `validation_result`
+  - Enforces strict token and password redaction before saving.
+
+---
+
+## 15. Evidence Manager & Defect Intelligence (Phase 4 Upgrades)
+
+### 15.1 Evidence Manager (`modules/evidence/`)
+- **Metadata Traceability Standard (9 Mandated Fields)**:
+  Every evidence item binds:
+  1. `ticket`: Target Jira issue key (e.g. `MB2C-1001`)
+  2. `test_case`: Test identifier (`TC-01`, `TC-REF-01`)
+  3. `step`: Executed action description
+  4. `timestamp`: Formatted execution timestamp (`YYYY-MM-DD HH:MM:SS`)
+  5. `device`: Physical device model (e.g. `OnePlus 12R (CPH2585)`)
+  6. `android_version`: OS version (e.g. `Android 14`)
+  7. `build`: Build identifier or number (e.g. `#142`)
+  8. `environment`: Target environment (`testingpwa1`, `staging`)
+  9. `result`: Execution status (`PASS`, `FAIL`, `BLOCKED`)
+- **Supported Evidence Types**:
+  - `screenshot`: Clean binary captures via ADB with fast-mode suppression for routine gestures.
+  - `logcat`: Filtered error/crash logcat buffers with sensitive PII/token redaction.
+  - `api_response`: Sanitized API payloads and status codes.
+  - `execution_log`: Detailed chronological test step narratives.
+- **Mandatory Capture Triggers**:
+  - Automatically triggers comprehensive evidence bundles (`screenshot`, `logcat`, `execution_log`) for **failures**, **blockers**, **defects**, and **critical assertions**.
+
+### 15.2 Defect Intelligence & Bug Card Protocol (`modules/defects/`)
+- **5-Step Defect Triaging Protocol**:
+  1. **Reproduce**: Verify defect persistence across retry.
+  2. **Capture Evidence**: Bundle screenshot, logcat crash trace, and step execution logs.
+  3. **Analyze Probable Layer**:
+     - `UI`: View hierarchy rendering, missing view ID, touch occlusion, layout overlap.
+     - `API`: HTTP 4xx, schema mismatch, endpoint timeout.
+     - `Backend`: HTTP 5xx, SQL/database errors, internal server exceptions.
+     - `Data`: Valid schema but wrong calculation/value (e.g. RTO tax formula mismatch).
+     - `Configuration`: Mismatched base URL, server switcher error, wrong package variant.
+     - `Environment`: ADB device offline, connection dropped, gateway 502/503.
+  4. **Duplicate Detection (`duplicate_detector.py`)**:
+     - Compares proposed summary against active open Jira tickets and cached issues to prevent duplicate bug reporting.
+  5. **Structured Bug Card Generation**:
+     ```text
+     Summary: <Summary>
+     Environment: <Environment>
+     Device: <Device>
+     Build: <Build>
+     Steps:
+        1. <Step 1>
+        2. <Step 2>
+     Expected: <Expected Result>
+     Actual: <Actual Defect Observed>
+     Evidence: <Screenshot / Logcat Path>
+     Probable Layer: <UI | API | Backend | Data | Configuration | Environment>
+     Severity/Priority suggestion: <Blocker | Major | Medium | Minor> / <Priority>
+     ```
+
+### 15.3 Critical Approval Gate (Zero Automatic Bug Creation)
+- **STRICT PROHIBITION ON AUTOMATIC BUG CREATION**:
+  - The orchestrator will **NEVER** create a Jira Testing Bug automatically.
+  - It presents the structured Bug Card directly in the chat window and halts for explicit user approval:
+    > *"Found defect during testing: '<Summary>'.\nKya is bug ko Jira mein 'Testing Bug' create karke parent ticket <KEY> se link karna hai? (Approve / Reject / Edit)"*
+  - Only after receiving unambiguous confirmation (`"Approve"`, `"Yes"`, `"Create"`) is the existing Jira bug creation and parent issue linking triggered.
+
+---
+
+## 16. Advanced Targeted Regression Intelligence (`modules/regression/`)
+
+### 16.1 Dependency-Aware Automotive Domain Graph (`dependency_graph.py`)
+- **Granular Relationship Modeling**:
+  Models typed bidirectional and hierarchical links across 7 entity types (`NodeType`):
+  - `FEATURE`: Specific UI / business capabilities (Gallery, Colours, Videos, Variants, Price, Lead CTA, EMI Calculator)
+  - `SCREEN`: Top-level and full-screen destinations (`model_details`, `home`, `search`, `change_url`)
+  - `MODULE`: Domain subsystems (`auth`, `news`, `used_cars`, `pricing_engine`)
+  - `API`: Backend contract endpoints (`/api/v1/model/gallery`, `/api/v1/price`, etc.)
+  - `NAVIGATION`: Tab switchers, bottom bars, drawer (`model_navigation`, `drawer`)
+  - `BUSINESS_FLOW`: Cross-cutting user journeys (`lead_flow`, `buy_flow`)
+  - `TEST_CASE`: Automated verification scripts mapped to specific nodes
+- **Automotive Feature Hierarchy Model**:
+  ```text
+  Model Detail
+   ├── Gallery
+   ├── Colours
+   ├── Videos
+   ├── Variants
+   ├── Price
+   └── Lead CTA
+  ```
+- **Subsystem Isolation & Unrelated Exclusions**:
+  - Automatically isolates collateral radius to 1st-degree dependencies and cluster siblings.
+  - Excludes completely disjoint subsystems (e.g. `Unrelated Home modules`, `News`, `Used Cars`) to eliminate test bloat and maintain fast, targeted execution.
+
+### 16.2 5-Level Regression Hierarchy (`regression_selector.py`)
+- **Supported Regression Levels**:
+  1. **`NONE`**: Purely isolated copy changes, string/typo updates, or terminal leaf nodes with zero downstream impacts.
+  2. **`SMOKE`**: Low-risk UI-only cosmetic tweaks where quick rendering/layout sanity suffices.
+  3. **`TARGETED`**: Standard functional features (MEDIUM risk). Selects primary modified component, container navigation, cluster siblings, and relevant APIs.
+  4. **`EXTENDED`**: High-risk changes (HIGH risk) spanning multi-screen components, pricing engine modifications, or global search indexers.
+  5. **`FULL`**: Full application regression suite.
+- **Strict Full Regression Gating Rule**:
+  - **NEVER select FULL unless explicitly justified by CRITICAL risk AND verified global architectural impact** (e.g., base network layer rewrite, core authentication architecture, global payment gateway).
+  - High and Medium risk tickets requesting broad testing are strictly downgraded to `EXTENDED` or `TARGETED`.
+
+### 16.3 Explainable Selection & Formatted Output Architecture
+- **Mandatory Explainability**:
+  - Every single selected regression scenario or component must have an explicit, non-empty `reason` linking back to the primary changed area.
+- **Standardized Formatted Card Output**:
+  ```text
+  Changed Area:
+  Gallery
+
+  Risk:
+  MEDIUM
+
+  Regression Level:
+  TARGETED
+
+  Selected:
+  Gallery
+  Colours
+  Videos
+  Model navigation
+  Relevant API
+
+  Excluded:
+  Unrelated Home modules
+  News
+  Used Cars
+  ```
+
+---
+
+## 17. Controlled Learning, Memory Separation & Historical Intelligence (`modules/learning/`)
+
+### 17.1 Strict Memory Separation (`memory_manager.py`)
+- **`knowledge/` Directory (Persistent Validated Memory)**:
+  - Houses permanent, validated intelligence: `learned_memory.json` and `historical_records.json`.
+  - Immutable during standard test runs.
+  - Can only be updated via the controlled learning promotion transaction.
+- **`runtime/` Directory (Ephemeral Execution State)**:
+  - Houses active session buffers: `active_session.json`, `candidate_learnings.json`, `test_run_history.json`.
+  - Strictly isolated from permanent knowledge. Can be cleared, reset, or purged without affecting persistent learned memory.
+
+### 17.2 5-Stage Controlled Learning Pipeline (`controlled_learner.py`)
+```text
+Observation ➔ Candidate Learning ➔ Validation ➔ Confidence/Approval ➔ Persistent Knowledge
+```
+- **Zero Single-Observation Assumption**:
+  - The orchestrator will **NEVER** automatically convert a single observation into permanent truth.
+- **5 Supported Learning Types**:
+  1. `DEVICE_COORDINATE`: Validated screen coordinates within physical resolution bounds.
+  2. `WORKFLOW_PATTERN`: Proven, reliable multi-step navigation paths.
+  3. `RECOVERY_ACTION`: Idempotent, safe recovery actions (intercepting overlays, dismissing keyboards, ANR recovery).
+  4. `ENVIRONMENT_BEHAVIOR`: Verified domain routing, base URLs, and server behaviors.
+  5. `CONFIRMED_TEST_PATTERN`: Stable assertion criteria and timing parameters.
+- **Validation & Promotion Rules**:
+  - Requires repeated confirmations (`min_observations_threshold = 3`, `confidence >= 0.90`).
+  - Rejects out-of-bounds coordinates, unsafe destructive shell commands, and unapproved domain URLs.
+  - High-impact changes (environment definitions, package assignments) mandate explicit user approval before permanent promotion.
+
+### 17.3 Historical QA Intelligence & Scenario Prioritization (`historical_intelligence.py`)
+- **Aggregated Historical Tracking**:
+  - `Frequently Failing Modules`: Calculates historical failure rates to identify unstable subsystems.
+  - `Recurring Defects`: Groups defects by layer/component to surface chronic product issues.
+  - `Common API Failures`: Maps endpoints with high failure rates (4xx/5xx or timeouts).
+  - `Regression Hotspots`: Highlights areas where collateral test cases frequently fail.
+  - `Environment Failures`: Tracks server dropouts, 502/503 gateway errors, and network timeouts.
+  - `Device-Specific Failures`: Isolates issues reproducing solely on specific Android hardware/OS models.
+- **Risk-Based Prioritization**:
+  - Reorders test scenarios so that historically high-failure modules and regression hotspots execute early for immediate feedback.
+- **Zero Verdict Bias Mandate**:
+  - Historical probability strictly influences execution order and triage depth; **it must NEVER alter, assume, or infer actual QA verdicts**.
+  - All verdicts (`PASS`, `FAIL`, `BLOCKED`) must be 100% grounded in real-time execution evidence.
+
+### 17.4 Flaky Test Detection & Reproducibility Gating (`flaky_detector.py`)
+- **Flakiness State Machine**:
+  - Tracks sliding window of execution verdicts (e.g. `PASS ➔ PASS ➔ FAIL ➔ PASS ➔ FAIL`).
+  - Computes transition frequency and flakiness score.
+  - Intermittent results are classified as `POTENTIALLY_FLAKY` rather than immediately logged as product defects.
+- **Mandatory Reproducibility Requirement**:
+  - Before confirming a failure as a product defect, consecutive retry runs are evaluated:
+    - Consistent failure across retries ➔ Confirmed `REPRODUCIBLE_DEFECT` (Eligible for Jira Bug Card).
+    - Intermittent passes during retry ➔ `FLAKY_SCENARIO` (Flagged as test flakiness; blocks spurious Jira defect creation).
+
+### 17.5 Factual QA Metrics Reporting (`metrics_reporter.py`)
+- **9 Core Factual QA Metrics**:
+  1. `Requirement Coverage`: Verified ACs vs total requirements (`X/Y (%)`).
+  2. `Execution Coverage`: Executed test cases vs planned test cases (`X/Y (%)`).
+  3. `Regression Coverage`: Executed regression checks vs targeted regression scope (`X/Y (%)`).
+  4. `Defect Count`: Verified, reproducible defects discovered.
+  5. `Blocked Tests`: Tests blocked due to environmental or precondition failures.
+  6. `Flaky Tests`: Number and identities of scenarios exhibiting flakiness.
+  7. `Average Execution Time`: Mean duration per test step / scenario (ms).
+  8. `Environment Failures`: Detailed server, gateway, and network dropouts.
+  9. `Recurring Failure Areas`: Modules showing multiple historical failures.
+- **Strict Prohibition on Misleading Scores**:
+  - Strictly forbids arbitrary "Quality Scores" (e.g. `85/100`), letter grades (`A+`), or subjective rankings.
+  - All reporting consists strictly of factual, verifiable execution counts and ratios.
+
+### 17.6 Safety Invariants
+- Historical learning must never override:
+  - Jira approval rules (Rule 8, Rule 13, Rule 26: Bug creation and status transitions always require explicit user confirmation).
+  - Server confirmation (Rule 2, Rule 11, Rule 17: Never assume or override target server).
+  - Explicit acceptance criteria (Jira AC remains ground truth).
+  - Actual execution evidence (Physical screencaps and live ADB logs determine verdict).
+
+

@@ -1,24 +1,43 @@
 """
-Fast-Track Autonomous Device Execution Engine for Jira AI QA Orchestrator.
-Zero-popup execution, deterministic coordinate lookup, smart URL switching,
-and continuous self-training.
+Fast-Track Autonomous & Interactive Device Execution Engine for Jira AI QA Orchestrator.
+Supports both Interactive Mode (detailed step-by-step logging, per-step screencaps, configurable delay)
+and Autonomous/Fast Mode (condition-based waits via WaitEngine, minimum delay, checkpoint & failure evidence).
+Zero-popup execution, deterministic coordinate lookup, smart URL switching, and continuous self-training.
 """
 
 import os
 import json
 import time
 import subprocess
+from enum import Enum
 from typing import Dict, Any, Optional, List, Tuple
+from .wait_engine import WaitEngine
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 SKILL_ROOT = os.path.dirname(os.path.dirname(MODULE_DIR))
 KNOWLEDGE_PATH = os.path.join(SKILL_ROOT, "knowledge", "learned_memory.json")
 
+class ExecutionMode(str, Enum):
+    INTERACTIVE = "INTERACTIVE"
+    AUTONOMOUS = "AUTONOMOUS"
+    FAST = "FAST"
+
 class FastRunner:
-    def __init__(self, serial: Optional[str] = None):
+    def __init__(
+        self,
+        serial: Optional[str] = None,
+        mode: str = "AUTONOMOUS",
+        interactive_delay: float = 1.0,
+        evidence_dir: Optional[str] = None
+    ):
         self.serial = serial or self._get_default_serial()
+        self.mode = ExecutionMode.INTERACTIVE if mode.upper() == "INTERACTIVE" else ExecutionMode.AUTONOMOUS
+        self.interactive_delay = interactive_delay
+        self.evidence_dir = evidence_dir or os.path.join(SKILL_ROOT, "reports", "evidence")
         self.knowledge = self._load_knowledge()
         self.device_profile = self._resolve_device_profile()
+        self.wait_engine = WaitEngine(serial=self.serial, adb_executor=self.adb)
+        self.step_counter = 0
 
     def _get_default_serial(self) -> str:
         try:
@@ -49,10 +68,8 @@ class FastRunner:
 
     def _resolve_device_profile(self) -> Dict[str, Any]:
         profiles = self.knowledge.get("device_profiles", {})
-        # Check if serial matches known model
         for name, profile in profiles.items():
             return profile
-        # Fallback default
         return {
             "screen_resolution": "1080x2376",
             "coordinates": {}
@@ -68,13 +85,19 @@ class FastRunner:
         dumpsys = self.adb("shell dumpsys power | grep mWakefulness")
         if "Awake" not in dumpsys:
             self.adb("shell input keyevent 224")
-            time.sleep(0.5)
+            time.sleep(0.3)
             self.adb("shell input keyevent 82")
-            time.sleep(1)
+            if self.mode == ExecutionMode.INTERACTIVE:
+                time.sleep(self.interactive_delay)
+            else:
+                self.wait_engine.wait_for_condition(
+                    lambda: "Awake" in self.adb("shell dumpsys power | grep mWakefulness"),
+                    timeout=3.0, poll_interval=0.2
+                )
 
     def dismiss_keyboard(self):
         self.adb("shell input keyevent 111")
-        time.sleep(0.3)
+        time.sleep(0.2 if self.mode == ExecutionMode.AUTONOMOUS else 0.5)
 
     def capture_screenshot(self, output_path: str) -> bool:
         """Captures clean binary screenshot without shell redirection quirks."""
@@ -85,12 +108,38 @@ class FastRunner:
                 cmd.extend(["-s", self.serial])
             cmd.extend(["exec-out", "screencap", "-p"])
             data = subprocess.check_output(cmd)
+            if not data or len(data) == 0:
+                # Potential FLAG_SECURE or modal dialog obstruction
+                print("[WARN] Screencap returned 0 bytes (FLAG_SECURE or modal blocked). Recovering with KEYCODE_BACK.")
+                self.adb("shell input keyevent 4")
+                time.sleep(0.5)
+                data = subprocess.check_output(cmd)
+
             with open(output_path, "wb") as f:
                 f.write(data)
             return True
         except Exception as e:
             print(f"[ERROR] Screencap failed: {e}")
             return False
+
+    def capture_failure_evidence(self, context_name: str) -> Optional[str]:
+        """Automatically captures screenshot and logcat error dump on failure."""
+        timestamp = int(time.time())
+        os.makedirs(self.evidence_dir, exist_ok=True)
+        img_path = os.path.join(self.evidence_dir, f"FAIL_{context_name}_{timestamp}.png")
+        log_path = os.path.join(self.evidence_dir, f"FAIL_{context_name}_{timestamp}.log")
+        
+        # 1. Screenshot
+        self.capture_screenshot(img_path)
+        # 2. Logcat errors
+        try:
+            log_output = self.adb("logcat -d *:E | tail -n 50")
+            with open(log_path, "w", encoding="utf-8") as f:
+                f.write(log_output)
+        except Exception:
+            pass
+        print(f"[FAILURE_EVIDENCE] Saved screenshot to {img_path}")
+        return img_path
 
     def get_coordinate(self, screen: str, element: str) -> Optional[Tuple[int, int]]:
         coords = self.device_profile.get("coordinates", {}).get(screen, {})
@@ -99,32 +148,33 @@ class FastRunner:
             return (pt[0], pt[1])
         return None
 
-    def tap(self, screen: str, element: str, delay: float = 1.0) -> bool:
+    def tap(self, screen: str, element: str, delay: Optional[float] = None) -> bool:
+        self.step_counter += 1
         pt = self.get_coordinate(screen, element)
-        if pt:
+        if not pt:
+            print(f"[WARN] Coordinate not found for {screen}.{element}")
+            if self.mode == ExecutionMode.AUTONOMOUS:
+                self.capture_failure_evidence(f"missing_coord_{screen}_{element}")
+            return False
+
+        if self.mode == ExecutionMode.INTERACTIVE:
+            print(f"[INTERACTIVE Step {self.step_counter}] Tapping {screen}.{element} at ({pt[0]}, {pt[1]})")
             self.adb(f"shell input tap {pt[0]} {pt[1]}")
-            time.sleep(delay)
+            step_img = os.path.join(self.evidence_dir, f"step_{self.step_counter}_{screen}_{element}.png")
+            self.capture_screenshot(step_img)
+            time.sleep(delay if delay is not None else self.interactive_delay)
             return True
-        print(f"[WARN] Coordinate not found for {screen}.{element}")
-        return False
+        else:
+            # Autonomous mode: condition-based wait or minimal settle delay
+            self.adb(f"shell input tap {pt[0]} {pt[1]}")
+            settle_delay = min(0.3, delay) if delay is not None else 0.2
+            time.sleep(settle_delay)
+            return True
 
     def resolve_env_urls(self, server_key: str, brand: str = "cardekho") -> Tuple[str, str]:
-        """
-        Resolves Base URL and Base API URL dynamically based on brand and server.
-        CarDekho:
-          - testing: testingpwa1, testingpwa2, etc. -> https://<server>.cardekho.com
-          - staging: https://staging.cardekho.com
-          - live: https://www.cardekho.com
-        BikeDekho:
-          - testing api: testingapi1, testingapi2 -> https://<server>.bikedekho.com
-          - testing pwa: testing1, testing2 -> https://<server>.bikedekho.com
-          - staging: pwa: https://alpha.bikedekho.com, api: https://alphaapi.bikedekho.com
-          - live: https://www.bikedekho.com
-        """
         key = server_key.lower().strip()
         brand = brand.lower().strip()
 
-        # Check knowledge base first
         env_dict = self.knowledge.get("environments", {})
         if key in env_dict and "base_url" in env_dict[key]:
             return env_dict[key]["base_url"], env_dict[key].get("base_api_url", f"{env_dict[key]['base_url']}/api")
@@ -138,12 +188,11 @@ class FastRunner:
                 return f"https://{key}.bikedekho.com", f"https://{key}.bikedekho.com/api"
             return f"https://{key}.bikedekho.com", f"https://{key}api.bikedekho.com"
 
-        # Default: cardekho
         if "staging" in key:
             return "https://staging.cardekho.com", "https://staging.cardekho.com/api"
         if "live" in key or "prod" in key or "www" in key:
             return "https://www.cardekho.com", "https://www.cardekho.com/api"
-        # e.g. testingpwa1, testingpwa2
+
         if not key.endswith(".cardekho.com"):
             base = f"https://{key}.cardekho.com"
             api = f"https://{key}.cardekho.com/api"
@@ -151,49 +200,47 @@ class FastRunner:
         return f"https://{key}", f"https://{key}/api"
 
     def ensure_server_url(self, target_server_key: str = "testingpwa1", brand: str = "cardekho") -> bool:
-        """
-        Deterministic, fast-track server URL verification and update.
-        Navigates to Hamburger > Change URL, checks/updates, and returns to Home.
-        """
+        """Deterministic server URL verification and update with execution mode support."""
         target_base, target_api = self.resolve_env_urls(target_server_key, brand=brand)
-        print(f"[FAST_RUNNER] Ensuring {brand} server URL: {target_base} | API: {target_api}")
+        print(f"[FAST_RUNNER] Ensuring {brand} server URL: {target_base} | API: {target_api} (Mode: {self.mode.value})")
 
         self.wake_and_unlock()
 
         # 1. Open drawer
-        self.tap("home", "hamburger_icon", delay=1.2)
+        self.tap("home", "hamburger_icon", delay=1.0)
         # 2. Tap Change URL
-        self.tap("drawer", "change_url", delay=2.0)
+        self.tap("drawer", "change_url", delay=1.5)
 
         # 3. Update BASE URL
-        self.tap("change_url_screen", "base_url_field", delay=0.5)
-        # Select all & delete
+        self.tap("change_url_screen", "base_url_field", delay=0.3)
         self.adb("shell input keyevent --meta 113 29")
         self.adb("shell input keyevent " + " ".join(["67"] * 50))
         self.adb(f"shell input text {target_base}")
-        time.sleep(0.5)
+        time.sleep(0.3)
 
         # 4. Update BASE API URL
-        self.tap("change_url_screen", "base_api_url_field", delay=0.5)
+        self.tap("change_url_screen", "base_api_url_field", delay=0.3)
         self.adb("shell input keyevent --meta 113 29")
         self.adb("shell input keyevent " + " ".join(["67"] * 50))
         self.adb(f"shell input text {target_api}")
-        time.sleep(0.5)
+        time.sleep(0.3)
 
         # 5. Hide keyboard
         self.dismiss_keyboard()
-        time.sleep(0.5)
 
         # 6. Tap UPDATE
-        self.tap("change_url_screen", "update_button", delay=2.5)
+        self.tap("change_url_screen", "update_button", delay=1.5)
+
+        # In autonomous mode, checkpoint evidence
+        checkpoint_img = os.path.join(self.evidence_dir, f"checkpoint_server_synced_{int(time.time())}.png")
+        self.capture_screenshot(checkpoint_img)
 
         # 7. Return to Home
-        self.tap("change_url_screen", "back_arrow", delay=1.5)
+        self.tap("change_url_screen", "back_arrow", delay=1.0)
         print(f"[SUCCESS] App environment successfully synchronized with {target_server_key} ({target_base})")
         return True
 
     def learn_coordinate(self, screen: str, element: str, x: int, y: int):
-        """Self-training method to store newly validated coordinates."""
         if "coordinates" not in self.device_profile:
             self.device_profile["coordinates"] = {}
         if screen not in self.device_profile["coordinates"]:
@@ -203,31 +250,32 @@ class FastRunner:
         print(f"[LEARNED] Stored {screen}.{element} -> ({x}, {y})")
 
     def safe_scroll_down(self, y_start: int = 1800, y_end: int = 600, x: int = 100, duration: int = 300):
-        """Scrolls vertically along the neutral screen margin to avoid horizontal carousel traps."""
         self.adb(f"shell input swipe {x} {y_start} {x} {y_end} {duration}")
-        time.sleep(1.5)
+        time.sleep(0.3 if self.mode == ExecutionMode.AUTONOMOUS else 1.5)
 
     def safe_scroll_up(self, y_start: int = 600, y_end: int = 1800, x: int = 100, duration: int = 300):
-        """Scrolls vertically upwards along the neutral margin."""
         self.adb(f"shell input swipe {x} {y_start} {x} {y_end} {duration}")
-        time.sleep(1.5)
+        time.sleep(0.3 if self.mode == ExecutionMode.AUTONOMOUS else 1.5)
 
     def dismiss_login_modal(self) -> bool:
-        """Dismisses the Login or Register bottom sheet overlay via SKIP button."""
         skip_coord = self.get_coordinate("dialogs", "login_modal_skip_button") or (880, 615)
         self.adb(f"shell input tap {skip_coord[0]} {skip_coord[1]}")
-        time.sleep(1.5)
+        time.sleep(0.5)
         return True
 
     def ensure_app_foreground(self, package: str = "com.girnarsoft.cardekho"):
-        """Guarantees target package is in active foreground."""
         dumpsys = self.adb("shell dumpsys window displays")
         if package not in dumpsys:
             print(f"[FAST_RUNNER] Launching {package} to foreground...")
             self.adb(f"shell monkey -p {package} -c android.intent.category.LAUNCHER 1")
-            time.sleep(3.5)
+            if self.mode == ExecutionMode.AUTONOMOUS:
+                self.wait_engine.wait_for_condition(
+                    lambda: package in self.adb("shell dumpsys window displays"),
+                    timeout=5.0, poll_interval=0.3
+                )
+            else:
+                time.sleep(3.0)
 
 if __name__ == "__main__":
     runner = FastRunner()
-    print("FastRunner initialized for device:", runner.serial)
-
+    print("FastRunner initialized for device:", runner.serial, "Mode:", runner.mode.value)

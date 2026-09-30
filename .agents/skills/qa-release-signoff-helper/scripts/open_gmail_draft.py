@@ -73,10 +73,10 @@ def handle_mail_draft(subject, body, to_emails=None, cc_emails=None, sender_emai
     # 2. Copy formatted text to Windows Clipboard automatically
     try:
         process = subprocess.Popen(['powershell', '-Command', '$input | Set-Clipboard'], stdin=subprocess.PIPE, text=True)
-        process.communicate(input=body)
+        process.communicate(input=body, timeout=2)
         print("[SUCCESS] Email body copied to Windows Clipboard (Ctrl+V ready)!")
     except Exception as e:
-        print(f"[WARN] Clipboard copy failed: {e}")
+        print(f"[INFO] Clipboard copy skipped/unavailable: {e}")
 
     # 3. Build Gmail Compose URL with authuser, TO, CC, Subject, and Body
     encoded_subject = urllib.parse.quote(subject)
